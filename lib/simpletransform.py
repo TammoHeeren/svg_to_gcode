@@ -21,8 +21,11 @@ barraud@math.univ-lille1.fr
 This code defines several functions to make handling of transform
 attribute easier.
 '''
-import cubicsuperpath, bezmisc 
-import copy, math, re
+from lib import cubicsuperpath, bezmisc
+import copy
+import math
+import re
+
 
 def parseTransform(transf,mat=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]):
     if transf=="" or transf==None:
@@ -76,8 +79,10 @@ def parseTransform(transf,mat=[[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]):
     else:
         return matrix
 
+
 def formatTransform(mat):
     return ("matrix(%f,%f,%f,%f,%f,%f)" % (mat[0][0], mat[1][0], mat[0][1], mat[1][1], mat[0][2], mat[1][2]))
+
 
 def composeTransform(M1,M2):
     a11 = M1[0][0]*M2[0][0] + M1[0][1]*M2[1][0]
@@ -89,6 +94,7 @@ def composeTransform(M1,M2):
     v2 = M1[1][0]*M2[0][2] + M1[1][1]*M2[1][2] + M1[1][2]
     return [[a11,a12,v1],[a21,a22,v2]]
 
+
 def composeParents(node, mat):
     trans = node.get('transform')
     if trans:
@@ -97,10 +103,12 @@ def composeParents(node, mat):
         mat = composeParents(node.getparent(), mat)
     return mat
 
+
 def applyTransformToNode(mat,node):
     m=parseTransform(node.get("transform"))
     newtransf=formatTransform(composeTransform(mat,m))
     node.set("transform", newtransf)
+
 
 def applyTransformToPoint(mat,pt):
     x = mat[0][0]*pt[0] + mat[0][1]*pt[1] + mat[0][2]
@@ -108,16 +116,18 @@ def applyTransformToPoint(mat,pt):
     pt[0]=x
     pt[1]=y
 
+
 def applyTransformToPath(mat,path):
     for comp in path:
         for ctl in comp:
             for pt in ctl:
                 applyTransformToPoint(mat,pt)
 
+
 def fuseTransform(node):
     if node.get('d')==None:
         #FIXME: how do you raise errors?
-        raise AssertionError, 'can not fuse "transform" of elements that have no "d" attribute'
+        raise AssertionError('can not fuse "transform" of elements that have no "d" attribute')
     t = node.get("transform")
     if t == None:
         return

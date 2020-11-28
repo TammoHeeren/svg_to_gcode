@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 
-# External Imports
+
 import logging
 import traceback
 import xml.etree.ElementTree as ET
+from lib import simplepath
+from lib import simpletransform
+from lib import cubicsuperpath
+from lib import cspsubdiv
+from lib.bezmisc import beziersplitatt
 
-# Internal Imports
-import simplepath
-import simpletransform 
-import cubicsuperpath
-import cspsubdiv
-from bezmisc import beziersplitatt
 
 # Parent Class
 class svgshape(object):
@@ -31,6 +30,7 @@ class svgshape(object):
     def __str__(self):
         return str(self.xml_node)        
 
+
 # PATH tag
 class path(svgshape):
 
@@ -46,6 +46,7 @@ class path(svgshape):
 
      def d_path(self):
         return self.d     
+
 
 # RECT tag
 class rect(svgshape):
@@ -74,6 +75,7 @@ class rect(svgshape):
         a.append( [' Z', []] )
         return simplepath.formatPath(a)     
 
+
 # ELLIPSE tag
 class ellipse(svgshape):
 
@@ -100,6 +102,7 @@ class ellipse(svgshape):
             '0 1 0 %f,%f' % ( x1, self.cy )
         return p
 
+
 # CIRCLE tag
 class circle(ellipse):
     
@@ -115,6 +118,7 @@ class circle(ellipse):
         else:
             self.cx = self.cy = self.r = 0
             logging.error("Circle: Unable to get the attributes for %s", self.xml_node)
+
 
 # LINE tag
 class line(svgshape):
@@ -138,6 +142,7 @@ class line(svgshape):
         a.append( ['L ', [self.x2, self.y2]] )
         return simplepath.formatPath(a)
 
+
 # Poly-point Parent Class
 class polycommon(svgshape):
 
@@ -153,6 +158,7 @@ class polycommon(svgshape):
         else:
             logging.error("polycommon: Unable to get the attributes for %s", self.xml_node)
 
+
 # POLYGON tag
 class polygon(polycommon):
 
@@ -166,6 +172,7 @@ class polygon(polycommon):
         d += " Z"
         return d
 
+
 # POLYLINE tag
 class polyline(polycommon):
 
@@ -177,6 +184,7 @@ class polyline(polycommon):
         for i in range( 1, len(self.points) ):
             d += " L " + self.points[i]
         return d
+
 
 #
 def point_generator(path, mat, flatness):

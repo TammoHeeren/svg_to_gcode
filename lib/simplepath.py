@@ -49,7 +49,7 @@ def lexPath(d):
             offset = m.end()
             continue
         #TODO: create new exception
-        raise Exception, 'Invalid path data!'
+        raise Exception('Invalid path data!')
 '''
 pathdefs = {commandfamily:
     [
@@ -94,7 +94,7 @@ def parsePath(d):
         needParam = True
         if isCommand:
             if not lastCommand and token.upper() != 'M':
-                raise Exception, 'Invalid path, must begin with moveto.'    
+                raise Exception('Invalid path, must begin with moveto.')
             else:                
                 command = token
         else:
@@ -107,16 +107,16 @@ def parsePath(d):
                 else:
                     command = pathdefs[lastCommand.upper()][0].lower()
             else:
-                raise Exception, 'Invalid path, no initial command.'    
+                raise Exception('Invalid path, no initial command.')
         numParams = pathdefs[command.upper()][1]
         while numParams > 0:
             if needParam:
                 try: 
                     token, isCommand = lexer.next()
                     if isCommand:
-                        raise Exception, 'Invalid number of parameters'
+                        raise Exception('Invalid number of parameters')
                 except StopIteration:
-                    raise Exception, 'Unexpected end of path'
+                    raise Exception('Unexpected end of path')
             cast = pathdefs[command.upper()][2][-numParams]
             param = cast(token)
             if command.islower():
@@ -163,9 +163,11 @@ def parsePath(d):
         retval.append([outputCommand,params])
     return retval
 
+
 def formatPath(a):
     """Format SVG path data from an array"""
     return "".join([cmd + " ".join([str(p) for p in params]) for cmd, params in a])
+
 
 def translatePath(p, x, y):
     for cmd,params in p:
@@ -176,6 +178,7 @@ def translatePath(p, x, y):
             elif defs[3][i] == 'y':
                 params[i] += y
 
+
 def scalePath(p, x, y):
     for cmd,params in p:
         defs = pathdefs[cmd]
@@ -184,6 +187,7 @@ def scalePath(p, x, y):
                 params[i] *= x
             elif defs[3][i] == 'y':
                 params[i] *= y
+
 
 def rotatePath(p, a, cx = 0, cy = 0):
     if a == 0:
