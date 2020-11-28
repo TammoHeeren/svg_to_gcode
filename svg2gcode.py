@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import logging
+import argparse
 import os
 import sys
 import xml.etree.ElementTree as ET
@@ -56,6 +57,12 @@ def generate_gcode(filename):
     # Get the Height and Width from the parent svg tag
     width = root.get('width')
     height = root.get('height')
+
+    # Need to remove units from width and heigh
+    # Limit to mm for now
+    width = width.replace('mm', '')
+    height = height.replace('mm', '')
+
     if width == None or height == None:
         viewbox = root.get('viewBox')
         if viewbox:
@@ -192,8 +199,9 @@ def test(filename):
 
 
 if __name__ == "__main__":
-    ''' If this file is called by itself in the command line
-        then this will execute.'''
-    file = input("Please supply a filename: ")
-    generate_gcode(file)
-    
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('input', help='Input SVG file')
+    args = parser.parse_args()
+
+    generate_gcode(args.input)
