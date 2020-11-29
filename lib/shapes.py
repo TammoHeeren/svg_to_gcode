@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-
-
 import logging
 import traceback
 import xml.etree.ElementTree as ET
@@ -9,6 +7,8 @@ from lib import simpletransform
 from lib import cubicsuperpath
 from lib import cspsubdiv
 from lib.bezmisc import beziersplitatt
+
+logger = logging.getLogger(__name__)
 
 
 # Parent Class
@@ -54,10 +54,10 @@ class rect(svgshape):
     def __init__(self, xml_node):
         super(rect, self).__init__(xml_node)
 
-        if not self.xml_node == None:
+        if not self.xml_node is None:
             rect_el = self.xml_node
-            self.x  = float(rect_el.get('x')) if rect_el.get('x') else 0
-            self.y  = float(rect_el.get('y')) if rect_el.get('y') else 0
+            self.x = float(rect_el.get('x')) if rect_el.get('x') else 0
+            self.y = float(rect_el.get('y')) if rect_el.get('y') else 0
             self.rx = float(rect_el.get('rx')) if rect_el.get('rx') else 0
             self.ry = float(rect_el.get('ry')) if rect_el.get('ry') else 0
             self.width = float(rect_el.get('width')) if rect_el.get('width') else 0
@@ -167,7 +167,7 @@ class polygon(polycommon):
 
     def d_path(self):
         d = "M " + self.points[0]
-        for i in range( 1, len(self.points) ):
+        for i in range(1, len(self.points)):
             d += " L " + self.points[i]
         d += " Z"
         return d
@@ -181,7 +181,7 @@ class polyline(polycommon):
 
     def d_path(self):
         d = "M " + self.points[0]
-        for i in range( 1, len(self.points) ):
+        for i in range(1, len(self.points)):
             d += " L " + self.points[i]
         return d
 
@@ -189,22 +189,29 @@ class polyline(polycommon):
 #
 def point_generator(path, mat, flatness):
 
-        if len(simplepath.parsePath(path)) == 0:
-                return
-       
-        simple_path = simplepath.parsePath(path)
-        startX,startY = float(simple_path[0][1][0]), float(simple_path[0][1][1])
-        yield startX, startY
+    if len(simplepath.parsePath(path)) == 0:
+            return
 
-        p = cubicsuperpath.parsePath(path)
-        
-        if mat:
-            simpletransform.applyTransformToPath(mat, p)
+    simple_path = simplepath.parsePath(path)
 
-        for sp in p:
-                cspsubdiv.subdiv( sp, flatness)
-                for csp in sp:
-                    ctrl_pt1 = csp[0]
-                    ctrl_pt2 = csp[1]
-                    end_pt = csp[2]
-                    yield end_pt[0], end_pt[1],    
+    # Yield the first point of the shape
+
+    first = simple_path[0]
+    startX, startY = float(first[1][0]), float(first[1][1])
+    yield startX, startY, False
+
+    logger.debug(path)
+
+    p = cubicsuperpath.parsePath(path)
+
+    if mat:
+        simpletransform.applyTransformToPath(mat, p)
+
+    for sp in p:
+
+        cspsubdiv.subdiv(sp, flatness)
+        for csp in sp:
+            ctrl_pt1 = csp[0]
+            ctrl_pt2 = csp[1]
+            end_pt = csp[2]
+            yield end_pt[0], end_pt[1], True

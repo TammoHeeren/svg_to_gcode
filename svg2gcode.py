@@ -11,6 +11,8 @@ from config import *
 DEBUGGING = True
 SVG = {'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon', 'path'}
 
+logger = logging.getLogger(__name__)
+
 
 def generate_gcode(filename):
     ''' The main method that converts svg files into gcode files.
@@ -58,31 +60,37 @@ def generate_gcode(filename):
     width = root.get('width')
     height = root.get('height')
 
-    # Need to remove units from width and heigh
+    logger.debug(f'Detected drawing width: {width}')
+    logger.debug(f'Detected drawing height: {height}')
+
+    # Need to remove units from width and height
     # Limit to mm for now
     width = width.replace('mm', '')
     height = height.replace('mm', '')
 
-    if width == None or height == None:
+    if width is None or height is None:
         viewbox = root.get('viewBox')
         if viewbox:
             _, _, width, height = viewbox.split()                
 
-    if width == None or height == None:
+    if width is None or height is None:
         # raise ValueError("Unable to get width or height for the svg")
         print("Unable to get width and height for the svg")
         sys.exit(1)
     
     # Scale the file appropriately
     # (Will never distort image - always scales evenly)
-    # ASSUMES: Y ASIX IS LONG AXIS
+    # ASSUMES: Y AXIS IS LONG AXIS
     #          X AXIS IS SHORT AXIS
     # i.e. laser cutter is in "portrait"
     scale_x = bed_max_x / float(width)
     scale_y = bed_max_y / float(height)
     scale = min(scale_x, scale_y)
+
     if scale > 1:
         scale = 1
+
+    logger.debug(f'Drawing scale: {scale}')
 
     log += debug_log("wdth: "+str(width))
     log += debug_log("hght: "+str(height))
@@ -94,7 +102,7 @@ def generate_gcode(filename):
     gcode = ""
 
     # Write Initial G-Codes
-    gcode += preamble + "\n"
+    gcode += PREAMBLE + "\n"
     
     # Iterate through svg elements
     for elem in root.iter():
@@ -141,24 +149,28 @@ def generate_gcode(filename):
                 gcode += shape_preamble + "\n"
                 points = point_generator(d, m, smoothness)
 
-                log += debug_log("\tPoints: "+str(points))
+                logger.debug(f'Points:')
 
-                for x,y in points:
+                for x, y, laser in points:
 
-                    #log += debug_log("\t  pt: "+str((x,y)))
+                    logger.debug(f'Point: x={x}\ty={y}\tLaser on: {laser}')
 
                     x = scale*x
-                    y = bed_max_y - scale*y
+                    x += X_OFFSET
 
-                    log += debug_log("\t  pt: "+str((x,y)))
+                    # y = bed_max_y - scale*y
+                    # y = scale*y - bed_max_y
+                    y = 297 - scale * y
+                    y += Y_OFFSET
 
                     if x >= 0 and x <= bed_max_x and y >= 0 and y <= bed_max_y:
+
                         if new_shape:
-                            gcode += ("G0 X%0.1f Y%0.1f\n" % (x, y))
-                            gcode += "M03\n"
+                            gcode += f'G0 X{x} Y{y} F{MOVERATE}\n'
+                            gcode += f'{LASER_ON}\n'
                             new_shape = False
                         else:
-                            gcode += ("G0 X%0.1f Y%0.1f\n" % (x, y))
+                            gcode += f'G0 X{x} Y{y} F{CUTRATE}\n'
                         log += debug_log("\t    --Point printed")
                     else:
                         log += debug_log("\t    --POINT NOT PRINTED ("+str(bed_max_x)+","+str(bed_max_y)+")")
@@ -168,7 +180,7 @@ def generate_gcode(filename):
         else:
           log += debug_log("  --No Name: "+tag_suffix)
 
-    gcode += postamble + "\n"
+    gcode += POSTAMBLE + "\n"
 
     # Write the Result
     ofile = open(outfile, 'w+')
@@ -199,6 +211,8 @@ def test(filename):
 
 
 if __name__ == "__main__":
+
+    logging.basicConfig(level=logging.DEBUG)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('input', help='Input SVG file')
